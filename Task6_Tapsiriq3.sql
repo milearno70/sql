@@ -68,34 +68,20 @@ GO
 USE UniversityDB;
 GO
 
--- ===== 1) UPDATE: bütün tələbələrin Email-i =====
--- + mətn birləşdirmə operatorudur (CONCAT funksiyası ilə eynidir).
 UPDATE Students
 SET Email = LOWER(FirstName) + '.' + LOWER(LastName) + '@bmu.edu.az';
 
 SELECT StudentId, FirstName, LastName, Email FROM Students;
 GO
 
--- ===== 2) DELETE: tələbəni silmək (StudentId = 4) =====
--- Niyə sıra vacibdir?
--- Grades.StudentId sütunu Students.StudentId-yə FOREIGN KEY ilə bağlıdır.
--- Əgər əvvəlcə Students-dən tələbəni silsək, Grades-də hələ də həmin StudentId-ni
--- göstərən sətirlər qalacaq ("yetim" sətirlər). SQL Server bunun qarşısını alır və
--- "DELETE statement conflicted with the REFERENCE constraint" xətası verir.
--- Ona görə əvvəlcə CHILD cədvəlin (Grades) sətirləri, sonra PARENT cədvəlin (Students)
--- sətri silinməlidir.
+
 DELETE FROM Grades   WHERE StudentId = 4;
 DELETE FROM Students WHERE StudentId = 4;
 GO
 
--- (Sınaq: yanlış sıra xəta verir)
 GO
 
--- ===== 3) ƏLAVƏ: ON DELETE CASCADE =====
--- ON DELETE CASCADE: parent sətir silinəndə ona bağlı child sətirlər
--- SQL Server tərəfindən AVTOMATİK silinir. Əl ilə əvvəlcə Grades-i silmək lazım olmur.
 
--- FK-nı CASCADE ilə yenidən yaradırıq:
 ALTER TABLE Grades DROP CONSTRAINT FK_Grades_Students;
 
 ALTER TABLE Grades
@@ -104,15 +90,8 @@ ADD CONSTRAINT FK_Grades_Students
     ON DELETE CASCADE;
 GO
 
--- Sınaq: yalnız Students-dən silirik (Grades-ə toxunmuruq)
-SELECT * FROM Grades WHERE StudentId = 1;   -- əvvəl: 2 sətir var
-DELETE FROM Students WHERE StudentId = 1;
-SELECT * FROM Grades WHERE StudentId = 1;   -- sonra: 0 sətir (avtomatik silinib)
-GO
 
--- FƏRQ:
---  * CASCADE olmadan (default NO ACTION): child sətirlər varsa parent silinmir, xəta verir;
---    əvvəlcə Grades əl ilə silinməlidir.
---  * CASCADE ilə: tək DELETE kifayətdir, Grades sətirləri avtomatik silinir.
---  * Diqqət: CASCADE rahatdır, amma təhlükəlidir — səhvən silinən parent sətir
---    bütün bağlı məlumatı da aparır. Vacib məlumatda ehtiyatla istifadə edin.
+SELECT * FROM Grades WHERE StudentId = 1;   
+DELETE FROM Students WHERE StudentId = 1;
+SELECT * FROM Grades WHERE StudentId = 1;   
+GO
